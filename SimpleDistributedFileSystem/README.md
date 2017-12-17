@@ -20,6 +20,7 @@
 * users can not lock a file that has been locked
 
 ## TODO
+* unlock file after a certain time period
 * check if file is locked in directory service before returning it
 * replication
 * Auth Server
