@@ -31,7 +31,7 @@ class File(db.Model):
         }
 class FileSchema(ma.Schema):
     class Meta:
-        fields = ('filename','filecontents')
+        fields = ('id','filename','filecontents')
 
 file_schema = FileSchema()
 files_schema = FileSchema(many = True)
@@ -59,5 +59,24 @@ def get_files():
     all_files = File.query.all()
     result = files_schema.dump(all_files)
     return jsonify(result.data)
+
+#endpoint to update a file saved on this server
+@app.route("/<id>",methods=["PUT"])
+def file_update(id):
+    file = File.query.get(id)
+    filename = request.json['filename']
+    filecontents = request.json['filecontents']
+    file.filename = filename
+    file.filecontents = filecontents
+    db.session.commit()
+    return file_schema.jsonify(file)
+
+#endpoint to remove a file save on the server
+@app.route("/<id>", methods=["DELETE"])
+def file_delete(id):
+    file = File.query.get(id)
+    db.session.delete(file)
+    db.session.commit()
+    return file_schema.jsonify(file)
 if __name__== '__main__':
     app.run(debug=True)
