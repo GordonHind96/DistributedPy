@@ -1,6 +1,11 @@
 from flask import Flask,request,jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flaskrun import flaskrun
+import httplib2, urllib
+import requests
+import optparse
+import json
 import os
 
 app = Flask(__name__)
@@ -8,6 +13,24 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'fileserver.sqlite')
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
+default_host = '127.0.0.1'
+default_port = '8000'
+parser = optparse.OptionParser()
+parser.add_option("-H", "--host",
+                      help="Hostname of the Flask app " + \
+                           "[default %s]" % default_host,
+                      default=default_host)
+parser.add_option("-P", "--port",
+                      help="Port for the Flask app " + \
+                           "[default %s]" % default_port,
+                      default=default_port)
+
+# Two options useful for debugging purposes, but
+# a bit dangerous so not exposed in the help message.
+parser.add_option("-d", "--debug",
+                      action="store_true", dest="debug",
+                      help=optparse.SUPPRESS_HELP)
+options, _ = parser.parse_args()
 
 '''
 File class,
@@ -78,5 +101,18 @@ def file_delete(id):
     db.session.delete(file)
     db.session.commit()
     return file_schema.jsonify(file)
-if __name__== '__main__':
-    app.run(debug=True)
+
+def informDirectory(host, port):
+    servinfo = {'host':options.host,'port':options.port}
+    print(servinfo)
+    headers ={'Content-Type':'application/json'}
+    r = requests.post("http://"+host+":"+port+"/register",headers=headers, data=json.dumps(servinfo))
+
+
+informDirectory('127.0.0.1','5000')
+
+app.run(
+        debug=options.debug,
+        host=options.host,
+        port=int(options.port)
+    )
