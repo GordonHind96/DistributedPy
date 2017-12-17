@@ -5,13 +5,13 @@ from flaskrun import flaskrun
 import requests
 import json
 import os
-
+from random import randint
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'directoryserver.sqlite')
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
-numServers = 1
+numServers = 0
 
 '''
 Directory class, keeps track of fileservers and the files on
@@ -61,7 +61,8 @@ def unregister_server(id):
 
 @app.route("/",methods=['POST'])
 def write_file():
-    server = Server.query.get(1)
+    global numServers
+    server = Server.query.get(randint(1,numServers))
     filename = request.json['filename']
     filecontents = request.json['filecontents']
     fileinfo = {'filename':filename,'filecontents':filecontents}

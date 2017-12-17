@@ -42,6 +42,7 @@ class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(80), unique=True)
     filecontents = db.Column(db.String(120))
+    locked = db.Column(db.Boolean, default=False)
 
     def __init__(self, filename, filecontents):
         self.filename = filename
@@ -102,11 +103,36 @@ def file_delete(id):
     db.session.commit()
     return file_schema.jsonify(file)
 
+@app.route("/lock/<id>", methods=['PUT'])
+def lock_file(id):
+    file = File.query.get(id)
+    if not file.locked:
+        file.locked = True
+        db.session.commit()
+        success = {'lock_status':'locked'}
+        return jsonify(success)
+    else:
+        failure = {'lock_status':'file locked by another user'}
+        return jsonify(failure)
+
+@app.route("/unlock/<id>", methods=['PUT'])
+def unlock_file(id):
+    file = File.query.get(id)
+    if file.locked:
+        file.locked = False
+        db.session.commit()
+        success = {'lock_status': 'unlocked'}
+        return jsonify(success)
+    else:
+        failure = {'lock_status': 'no lock on this file'}
+        return jsonify(failure)
+
 def informDirectory(host, port):
     servinfo = {'host':options.host,'port':options.port}
     print(servinfo)
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://"+host+":"+port+"/register",headers=headers, data=json.dumps(servinfo))
+
 
 
 informDirectory('127.0.0.1','5000')
