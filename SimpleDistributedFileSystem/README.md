@@ -2,14 +2,18 @@
 
 ## WHAT's DONE
 
+### FileServer
 * endpoints for creating a file
 * endpoints for retrieving a specific file
 * endpoints for retreiving all files
 * endpoints for updating file
 * endpoints for deleteing file
 
+### Directory Server
+* endpoints to write a file on the directory server and receive location info in return
+
+
 ## TODO
-* Directory server
 * endpoints to query all servers on the directory for file
 * endpoints to return a requested file from a fileserver
 * replication
