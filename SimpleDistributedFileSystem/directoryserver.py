@@ -11,7 +11,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'directoryserver.sqlite')
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
-numServers = 0
+numServers = 1
 
 '''
 Directory class, keeps track of fileservers and the files on
@@ -56,7 +56,7 @@ def unregister_server(id):
     db.session.delete(server)
     db.session.commit()
     global numServers
-    numservers -= 1
+    numServers -= 1
     return server_schema.jsonify(server)
 
 @app.route("/",methods=['POST'])
@@ -73,16 +73,14 @@ def write_file():
 
 @app.route("/<filename>", methods=['GET'])
 def get_file_locations(filename):
-   # filename = request.json['filename']
     global numServers
-    for i in range(1 , numServers):
-        print("looking for file on server number %d"% i)
+    for i in range(1, numServers+1):
         server = Server.query.get(i)
         r = requests.get("http://"+server.host+":"+ str(server.port)+"/")
         resJson = r.json()
-        for file in resJson:
-            if file['filename'] == filename:
-                responsePackage={'serverhost':server.host,'serverport':server.port,'fileid':file['id']}
+        for item in resJson:
+            if item['filename'] == filename:
+                responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
                 return jsonify(responsePackage)
     return abort(404)
 

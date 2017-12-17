@@ -11,11 +11,10 @@
 
 ### Directory Server
 * endpoints to write a file on the directory server and receive location info in return
+* endpoints to request a file by name and have its location and id returned
 
 
 ## TODO
-* endpoints to query all servers on the directory for file
-* endpoints to return a requested file from a fileserver
 * replication
 * Lock Server
 * lock and unlock
