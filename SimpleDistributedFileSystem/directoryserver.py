@@ -2,6 +2,8 @@ from flask import Flask,request,jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flaskrun import flaskrun
+import requests
+import json
 import os
 
 app = Flask(__name__)
@@ -51,4 +53,16 @@ def unregister_server(id):
     db.session.delete(server)
     db.session.commit()
     return server_schema.jsonify(server)
+
+@app.route("/",methods=['POST'])
+def write_file():
+    server = Server.query.get(1)
+    filename = request.json['filename']
+    filecontents = request.json['filecontents']
+    fileinfo = {'filename':filename,'filecontents':filecontents}
+    headers = {'Content-Type': 'application/json'}
+    r = requests.post("http://" + server.host + ":" + str(server.port) + "/", headers=headers, data=json.dumps(fileinfo))
+    resJson = r.json()
+    responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':resJson['id'],'filename':resJson['filename'],'filecontents':resJson['filecontents']}
+    return jsonify(responsePackage)
 flaskrun(app)
