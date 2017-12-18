@@ -63,14 +63,20 @@ def unregister_server(id):
 @app.route("/",methods=['POST'])
 def write_file():
     global numServers
-    server = Server.query.get(randint(1,numServers))
     filename = request.json['filename']
     filecontents = request.json['filecontents']
-    fileinfo = {'filename':filename,'filecontents':filecontents}
     headers = {'Content-Type': 'application/json'}
-    r = requests.post("http://" + server.host + ":" + str(server.port) + "/", headers=headers, data=json.dumps(fileinfo))
-    resJson = r.json()
-    responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':resJson['id'],'filename':resJson['filename'],'filecontents':resJson['filecontents']}
+    responsePackage={'status':'fail'}
+    version = 'primary'
+    for i in range(1,numServers+1):
+        server = Server.query.get(i)
+        if i != 1:
+            version = 'secondary'
+        fileinfo = {'filename': filename, 'filecontents': filecontents,'version':version,'file_server':i}
+        r = requests.post("http://" + server.host + ":" + str(server.port) + "/", headers=headers, data=json.dumps(fileinfo))
+        resJson = r.json()
+        responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':resJson['id'],'filename':resJson['filename'],'filecontents':resJson['filecontents']}
+
     return jsonify(responsePackage)
 
 @app.route("/<filename>", methods=['GET'])
@@ -88,4 +94,38 @@ def get_file_locations(filename):
                     return jsonify(responsePackage)
     return abort(404)
 
+@app.route("/update",methods=['POST'])
+def update_files():
+    filename = request.json['filename']
+    filecontents = request.json['filecontents']
+    for i in range(1, numServers+1):
+        server = Server.query.get(i)
+        r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
+        print(r.text)
+        resJson = r.json()
+        for item in resJson:
+            if item['filename'] == filename:
+                update_data = {'filename':filename,'filecontents':filecontents,'update_flag':'from_primary'}
+                headers = {'Content-Type': 'application/json'}
+                r = requests.put("http://"+server.host+":"+ str(server.port)+"/"+item.id,headers=headers,data=json.dumps(update_data))
+                return r.json()
+    return 200
+
+@app.route("/updatep",methods=['POST'])
+def find_and_update_primary():
+    filename = request.json['filename']
+    filecontents = request.json['filecontents']
+    for i in range(1, numServers + 1):
+        server = Server.query.get(i)
+        r = requests.get("http://" + server.host + ":" + str(server.port) + "/s/" + str(i))
+        print(r.text)
+        resJson = r.json()
+        for item in resJson:
+            if item['filename'] == filename and item['version'] == 'primary':
+                update_data = {'filename': filename, 'filecontents': filecontents, 'update_flag': 'from_secondary'}
+                headers = {'Content-Type': 'application/json'}
+                r = requests.put("http://" + server.host + ":" + str(server.port) + "/" + item.id, headers=headers,
+                                data=json.dumps(update_data))
+                return r.json()
+    return 200
 flaskrun(app)

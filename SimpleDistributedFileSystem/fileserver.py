@@ -44,22 +44,25 @@ class File(db.Model):
     filecontents = db.Column(db.String(120))
     locked = db.Column(db.Boolean, default=False)
     server = db.Column(db.Integer)
+    version = db.Column(db.String(80))
 
-    def __init__(self, filename, filecontents, server):
+    def __init__(self, filename, filecontents, server, version):
         self.filename = filename
         self.filecontents = filecontents
         self.server = server
+        self.version = version
     def serialize(self):
         return{
             'id':self.id,
             'filename':self.filename,
             'filecontents':self.filecontents,
             'locked':self.locked,
-            'server':self.server
+            'server':self.server,
+            'version':self.version
         }
 class FileSchema(ma.Schema):
     class Meta:
-        fields = ('id','filename','filecontents','locked','server')
+        fields = ('id','filename','filecontents','locked','server','version')
 
 file_schema = FileSchema()
 files_schema = FileSchema(many = True)
@@ -70,7 +73,8 @@ def add_file():
     filename = request.json['filename']
     filecontents = request.json['filecontents']
     file_server = request.json['file_server']
-    new_file = File(filename,filecontents,file_server)
+    file_version = request.json['version']
+    new_file = File(filename,filecontents,file_server,file_version)
     db.session.add(new_file)
     db.session.commit()
     return jsonify(new_file.serialize())
@@ -95,9 +99,15 @@ def file_update(id):
     file = File.query.get(id)
     filename = request.json['filename']
     filecontents = request.json['filecontents']
+    flag = request.json['update_flag']
     file.filename = filename
     file.filecontents = filecontents
     db.session.commit()
+
+    if file.version == 'primary':
+        update_secondarys(file.id)
+    elif file.version =='secondary' and flag != 'from_primary':
+        update_primary(file.id)
     return file_schema.jsonify(file)
 
 #endpoint to remove a file save on the server
@@ -132,7 +142,17 @@ def unlock_file(id):
         failure = {'lock_status': 'no lock on this file'}
         return jsonify(failure)
 
-def informDirectory(host, port):
+def update_secondarys(id):
+    file = File.query.get(id)
+    update_data = {'filename':file.filename,'filecontents':file.filecontents}
+    headers ={'Content-Type':'application/json'}
+    r = requests.post("http://127.0.0.1:5000/update",headers=headers,data=json.dumps(update_data))
+def update_primary(id):
+    file = File.query.fet(id)
+    update_data = {'filename':file.filename,'filecontents':file.filecontents}
+    headers = {'Content-Type':'application/json'}
+    r = requests.post("http:127.0.0/1:5000/updatep",headers=headers,data= json.dumps(update_data))
+def inform_directory(host, port):
     servinfo = {'host':options.host,'port':options.port}
     print(servinfo)
     headers ={'Content-Type':'application/json'}
@@ -140,7 +160,7 @@ def informDirectory(host, port):
 
 
 
-informDirectory('127.0.0.1','5000')
+inform_directory('127.0.0.1','5000')
 
 app.run(
         debug=options.debug,
