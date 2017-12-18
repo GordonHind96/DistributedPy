@@ -40,22 +40,26 @@ flilecontents: contents specidied by user
 '''
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(80), unique=True)
+    filename = db.Column(db.String(80))
     filecontents = db.Column(db.String(120))
     locked = db.Column(db.Boolean, default=False)
+    server = db.Column(db.Integer)
 
-    def __init__(self, filename, filecontents):
+    def __init__(self, filename, filecontents, server):
         self.filename = filename
         self.filecontents = filecontents
+        self.server = server
     def serialize(self):
         return{
             'id':self.id,
             'filename':self.filename,
-            'filecontents':self.filecontents
+            'filecontents':self.filecontents,
+            'locked':self.locked,
+            'server':self.server
         }
 class FileSchema(ma.Schema):
     class Meta:
-        fields = ('id','filename','filecontents')
+        fields = ('id','filename','filecontents','locked','server')
 
 file_schema = FileSchema()
 files_schema = FileSchema(many = True)
@@ -65,7 +69,8 @@ files_schema = FileSchema(many = True)
 def add_file():
     filename = request.json['filename']
     filecontents = request.json['filecontents']
-    new_file = File(filename,filecontents)
+    file_server = request.json['file_server']
+    new_file = File(filename,filecontents,file_server)
     db.session.add(new_file)
     db.session.commit()
     return jsonify(new_file.serialize())
@@ -78,10 +83,10 @@ def get_file(id):
     return file_schema.jsonify(file)
 
 #endpoint to get all files saved on this server
-@app.route("/", methods=["GET"])
-def get_files():
-    all_files = File.query.all()
-    result = files_schema.dump(all_files)
+@app.route("/s/<server_id>", methods=["GET"])
+def get_files(server_id):
+    all_files_on_server = File.query.filter_by(server = server_id).all()
+    result = files_schema.dump(all_files_on_server)
     return jsonify(result.data)
 
 #endpoint to update a file saved on this server

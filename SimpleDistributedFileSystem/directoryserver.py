@@ -11,7 +11,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'directoryserver.sqlite')
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
-numServers = 0
+numServers = 2
 
 '''
 Directory class, keeps track of fileservers and the files on
@@ -21,6 +21,7 @@ class Server(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     host = db.Column(db.String(80))
     port = db.Column(db.Integer, unique=True)
+
 
     def __init__(self, host, port):
         self.host = host
@@ -46,8 +47,8 @@ def register_server():
     new_server = Server(host,port)
     db.session.add(new_server)
     db.session.commit()
-    global numServers
-    numServers += 1
+    #global numServers
+    #numServers += 1
     return jsonify(new_server.serialize())
 
 @app.route("/unregister/<id>", methods=["DELETE"])
@@ -55,8 +56,8 @@ def unregister_server(id):
     server = Server.query.get(id)
     db.session.delete(server)
     db.session.commit()
-    global numServers
-    numServers -= 1
+    #global numServers
+    #numServers -= 1
     return server_schema.jsonify(server)
 
 @app.route("/",methods=['POST'])
@@ -77,12 +78,14 @@ def get_file_locations(filename):
     global numServers
     for i in range(1, numServers+1):
         server = Server.query.get(i)
-        r = requests.get("http://"+server.host+":"+ str(server.port)+"/")
+        r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
+        print(r.text)
         resJson = r.json()
         for item in resJson:
             if item['filename'] == filename:
-                responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
-                return jsonify(responsePackage)
+                if item['locked']==False:
+                    responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
+                    return jsonify(responsePackage)
     return abort(404)
 
 flaskrun(app)
