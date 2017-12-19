@@ -82,6 +82,7 @@ def write_file():
 @app.route("/<filename>", methods=['GET'])
 def get_file_locations(filename):
     global numServers
+    response = 'could not find file with that name'
     for i in range(1, numServers+1):
         server = Server.query.get(i)
         r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
@@ -89,10 +90,12 @@ def get_file_locations(filename):
         resJson = r.json()
         for item in resJson:
             if item['filename'] == filename:
-                if item['locked']==False:
+                response = 'item found but locked by another user'
+                if not check_locked(item['id'],server.port):
                     responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
                     return jsonify(responsePackage)
-    return abort(404)
+    responsePackage = {'response':response}
+    return jsonify(responsePackage)
 
 @app.route("/update",methods=['POST'])
 def update_files():
@@ -128,4 +131,13 @@ def find_and_update_primary():
                                 data=json.dumps(update_data))
                 return r.json()
     return 200
+def check_locked(id, port):
+    data = {'id':id,'port':port}
+    headers ={'Content-Type':'application/json'}
+    r = requests.post("http://127.0.0.1:6000/vf",headers = headers, data=json.dumps(data))
+    resJson = r.json()
+    if resJson['lock_status'] == True:
+        return True
+    else:
+        return False
 flaskrun(app)

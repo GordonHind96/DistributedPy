@@ -42,7 +42,6 @@ class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(80))
     filecontents = db.Column(db.String(120))
-    locked = db.Column(db.Boolean, default=False)
     server = db.Column(db.Integer)
     version = db.Column(db.String(80))
 
@@ -56,13 +55,12 @@ class File(db.Model):
             'id':self.id,
             'filename':self.filename,
             'filecontents':self.filecontents,
-            'locked':self.locked,
             'server':self.server,
             'version':self.version
         }
 class FileSchema(ma.Schema):
     class Meta:
-        fields = ('id','filename','filecontents','locked','server','version')
+        fields = ('id','filename','filecontents','server','version')
 
 file_schema = FileSchema()
 files_schema = FileSchema(many = True)
@@ -97,18 +95,22 @@ def get_files(server_id):
 @app.route("/<id>",methods=["PUT"])
 def file_update(id):
     file = File.query.get(id)
-    filename = request.json['filename']
-    filecontents = request.json['filecontents']
-    flag = request.json['update_flag']
-    file.filename = filename
-    file.filecontents = filecontents
-    db.session.commit()
+    lock_id = request.json['lock_id']
+    if check_lock(lock_id,file.id):
+        filename = request.json['filename']
+        filecontents = request.json['filecontents']
+        flag = request.json['update_flag']
+        file.filename = filename
+        file.filecontents = filecontents
+        db.session.commit()
 
-    if file.version == 'primary':
-        update_secondarys(file.id)
-    elif file.version =='secondary' and flag != 'from_primary':
-        update_primary(file.id)
-    return file_schema.jsonify(file)
+        if file.version == 'primary':
+            update_secondarys(file.id)
+        elif file.version =='secondary' and flag != 'from_primary':
+            update_primary(file.id)
+        return file_schema.jsonify(file)
+    responsePackage = {'response':'unable to get lock on file'}
+    return jsonify(responsePackage)
 
 #endpoint to remove a file save on the server
 @app.route("/<id>", methods=["DELETE"])
@@ -118,45 +120,33 @@ def file_delete(id):
     db.session.commit()
     return file_schema.jsonify(file)
 
-@app.route("/lock/<id>", methods=['PUT'])
-def lock_file(id):
-    file = File.query.get(id)
-    if not file.locked:
-        file.locked = True
-        db.session.commit()
-        success = {'lock_status':'locked'}
-        return jsonify(success)
-    else:
-        failure = {'lock_status':'file locked by another user'}
-        return jsonify(failure)
-
-@app.route("/unlock/<id>", methods=['PUT'])
-def unlock_file(id):
-    file = File.query.get(id)
-    if file.locked:
-        file.locked = False
-        db.session.commit()
-        success = {'lock_status': 'unlocked'}
-        return jsonify(success)
-    else:
-        failure = {'lock_status': 'no lock on this file'}
-        return jsonify(failure)
-
 def update_secondarys(id):
     file = File.query.get(id)
     update_data = {'filename':file.filename,'filecontents':file.filecontents}
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://127.0.0.1:5000/update",headers=headers,data=json.dumps(update_data))
+
 def update_primary(id):
     file = File.query.fet(id)
     update_data = {'filename':file.filename,'filecontents':file.filecontents}
     headers = {'Content-Type':'application/json'}
     r = requests.post("http:127.0.0/1:5000/updatep",headers=headers,data= json.dumps(update_data))
+
 def inform_directory(host, port):
     servinfo = {'host':options.host,'port':options.port}
     print(servinfo)
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://"+host+":"+port+"/register",headers=headers, data=json.dumps(servinfo))
+
+def check_lock(id,file_id):
+    data = {'id': id, 'port': options.port,'file_id':file_id}
+    headers = {'Content-Type': 'application/json'}
+    r = requests.post("http://127.0.0.1:6000/v", headers=headers, data=json.dumps(data))
+    resJson = r.json()
+    if resJson['valid'] == True:
+        return True
+    else:
+        return False
 
 
 
