@@ -29,7 +29,7 @@
 * unlock file after a certain time period
 * set so that user can specify number of versions of file default 1
 * think of how to react ot user deleteing file with replicated copies
-* make it so fileservers are no longer sharing the same database
+* ~~make it so fileservers are no longer sharing the same database~~ this will be solved by running on different machines
 * Auth Server
 * user accounts
 * only users can access usertaged files
