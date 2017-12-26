@@ -70,11 +70,13 @@ def validate_lock_id():
     lock_id = request.json['id']
     lock = Lock.query.get(lock_id)
     if lock is None:
+        print("no lock")
         response = {"valid": False}
         return jsonify(response)
     if lock.file_id == request.json['file_id'] and lock.port == request.json['port']:
         response = {"valid":True}
         return jsonify(response)
+    print("lock and file don't match")
     response = {"valid":False}
     return jsonify(response)
 

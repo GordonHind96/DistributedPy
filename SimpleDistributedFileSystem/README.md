@@ -31,8 +31,6 @@
 * when update is made to secondary version of file, it informs the dirctory server to update the primary, and the primary updates the rest of the secondarys
 
 ## TODO
-* make sure locks can be validated
-* update directory server to return more information ie file found but locked or file not found
 * unlock file after a certain time period
 * set so that user can specify number of versions of file default 1
 * think of how to react ot user deleteing file with replicated copies
@@ -41,6 +39,3 @@
 * user accounts
 * only users can access usertaged files
 * groups and groupd access of files
-
-### Bonus
-* create a nice user interface

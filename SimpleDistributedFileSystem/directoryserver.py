@@ -101,17 +101,19 @@ def get_file_locations(filename):
 def update_files():
     filename = request.json['filename']
     filecontents = request.json['filecontents']
+    server_id = request.json['server_id']
     for i in range(1, numServers+1):
-        server = Server.query.get(i)
-        r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
-        print(r.text)
-        resJson = r.json()
-        for item in resJson:
-            if item['filename'] == filename:
-                update_data = {'filename':filename,'filecontents':filecontents,'update_flag':'from_primary'}
-                headers = {'Content-Type': 'application/json'}
-                r = requests.put("http://"+server.host+":"+ str(server.port)+"/"+item.id,headers=headers,data=json.dumps(update_data))
-                return r.json()
+        if i != server_id:
+            server = Server.query.get(i)
+            r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
+            print(r.text)
+            resJson = r.json()
+            for item in resJson:
+                if item['filename'] == filename:
+                    update_data = {'filename':filename,'filecontents':filecontents,'update_flag':'from_primary'}
+                    headers = {'Content-Type': 'application/json'}
+                    r = requests.put("http://"+server.host+":"+ str(server.port)+"/"+str(item.id),headers=headers,data=json.dumps(update_data))
+                    return r.json()
     return 200
 
 @app.route("/updatep",methods=['POST'])
