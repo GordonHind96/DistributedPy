@@ -40,3 +40,21 @@
 * user accounts
 * only users can access usertaged files
 * groups and groupd access of files
+
+## Report
+Explanation of some of the design choices.
+### Directory Server
+Stores in locations of the fileservers, fileservers register and unregister with the directory server. When queried for a file the directory server will search for the file and return the first available version of that file.
+#### Issues and Improvements
+Currenrtly replication and storage is done naively, replicating all files to all available fileservers, and ordering files in terms of times written. Imrpovement order fileservers alphabetically,by user or by filetype to reduce search time. Replicate to different servers
+
+### File Server
+Stores the information about the files. including contents,name, serverid and version (either primary or secondary) when a file is updated of deleted (if primary all versions will be updated or deleted), if secondary primary will be updated, but not deleted.
+
+#### Issues and Improvements
+Currently as all fileservers run on a single maching the share use of the same database, meaning technically I can query the contents of server 2 on server 1. This would be solved by running the servers on seperate machines via docker.
+
+### Lock Server
+Stores the information about locks. Lock information is info on the file that is locked, the port it is locked on and when it was locked.
+Locks can be unlocked if a valid lock id is given. Locks can be validated with lock id and file id or with file id and port number.
+
