@@ -106,14 +106,18 @@ def update_files():
         if i != server_id:
             server = Server.query.get(i)
             r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
-            print(r.text)
             resJson = r.json()
             for item in resJson:
                 if item['filename'] == filename:
-                    update_data = {'filename':filename,'filecontents':filecontents,'update_flag':'from_primary'}
+                    requestLock = {'host': server.host, 'port': server.port, "id":item['id']}
                     headers = {'Content-Type': 'application/json'}
-                    r = requests.put("http://"+server.host+":"+ str(server.port)+"/"+str(item.id),headers=headers,data=json.dumps(update_data))
-                    return r.json()
+                    rs = requests.post("http://127.0.0.1:6000/", headers=headers, data=json.dumps(requestLock))
+                    rjs = rs.json()
+                    update_data = {'filename':filename,'filecontents':filecontents,'lock_id':rjs['id'],'update_flag':'from_primary'}
+                    headers = {'Content-Type': 'application/json'}
+                    re = requests.put("http://"+server.host+":"+ str(server.port)+"/"+str(item['id']),headers=headers,data=json.dumps(update_data))
+                    rs = requests.delete("http://127.0.0.1:6000/"+str(rjs['id']))
+                    return jsonify(re.json())
     return 200
 
 @app.route("/updatep",methods=['POST'])
@@ -127,7 +131,7 @@ def find_and_update_primary():
         resJson = r.json()
         for item in resJson:
             if item['filename'] == filename and item['version'] == 'primary':
-                update_data = {'filename': filename, 'filecontents': filecontents, 'update_flag': 'from_secondary'}
+                update_data = {'filename': filename, 'filecontents': filecontents, 'update_flag': 'from_secondary','lock_id':0}
                 headers = {'Content-Type': 'application/json'}
                 r = requests.put("http://" + server.host + ":" + str(server.port) + "/" + item.id, headers=headers,
                                 data=json.dumps(update_data))

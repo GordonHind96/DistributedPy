@@ -31,9 +31,10 @@
 * when update is made to secondary version of file, it informs the dirctory server to update the primary, and the primary updates the rest of the secondarys
 
 ## TODO
+* client library
 * unlock file after a certain time period
 * set so that user can specify number of versions of file default 1
-* think of how to react ot user deleteing file with replicated copies
+* think of how to react to user deleteing file with replicated copies
 * ~~make it so fileservers are no longer sharing the same database~~ this will be solved by running on different machines
 * Auth Server
 * user accounts

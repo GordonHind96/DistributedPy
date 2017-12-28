@@ -103,7 +103,6 @@ def file_update(id):
         file.filename = filename
         file.filecontents = filecontents
         db.session.commit()
-
         if file.version == 'primary':
             update_secondarys(file.id,file.server)
         elif file.version =='secondary' and flag != 'from_primary':
