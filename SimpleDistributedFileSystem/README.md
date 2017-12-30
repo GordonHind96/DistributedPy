@@ -28,10 +28,14 @@
 ### Replication
 * when creating file, file is saved to each server sequentially, this will ideally be changed to a more dynamic model
 * when update is made to primary version of file, it goes and updates all secondary versions of the file via the directory server
-* when update is made to secondary version of file, it informs the dirctory server to update the primary, and the primary updates the rest of the secondarys
+* secondary files can only be read and not written to
+
+## Client
+* client can write new file, does not require lock, writing file also prompts read_write_file
+* read_write_file, client can read file and make change to it
+* read_file, client can read file
 
 ## TODO
-* client library
 * unlock file after a certain time period
 * set so that user can specify number of versions of file default 1
 * think of how to react to user deleteing file with replicated copies
@@ -57,4 +61,10 @@ Currently as all fileservers run on a single maching the share use of the same d
 ### Lock Server
 Stores the information about locks. Lock information is info on the file that is locked, the port it is locked on and when it was locked.
 Locks can be unlocked if a valid lock id is given. Locks can be validated with lock id and file id or with file id and port number.
+
+### Client
+3 methods that don't do much in the way of error handling or convenience
+
+#### Issues and Imporvements
+When editing files, automatically include what is already in the file, as opposed to having the user type out from fresh each time
 

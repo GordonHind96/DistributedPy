@@ -96,7 +96,7 @@ def get_files(server_id):
 def file_update(id):
     file = File.query.get(id)
     lock_id = request.json['lock_id']
-    if check_lock(lock_id,id):
+    if check_lock(lock_id,id) or file.version == 'primary':
         filename = request.json['filename']
         filecontents = request.json['filecontents']
         flag = request.json['update_flag']
@@ -105,8 +105,6 @@ def file_update(id):
         db.session.commit()
         if file.version == 'primary':
             update_secondarys(file.id,file.server)
-        elif file.version =='secondary' and flag != 'from_primary':
-            update_primary(file.id,file.server)
         return file_schema.jsonify(file)
     responsePackage = {'response':'unable to get lock on file'}
     return jsonify(responsePackage)
@@ -125,11 +123,6 @@ def update_secondarys(id,serv_id):
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://127.0.0.1:5000/update",headers=headers,data=json.dumps(update_data))
 
-def update_primary(id,serv_id):
-    file = File.query.fet(id)
-    update_data = {'filename':file.filename,'filecontents':file.filecontents,'server_id':serv_id}
-    headers = {'Content-Type':'application/json'}
-    r = requests.post("http:127.0.0/1:5000/updatep",headers=headers,data= json.dumps(update_data))
 
 def inform_directory(host, port):
     servinfo = {'host':options.host,'port':options.port}

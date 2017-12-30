@@ -79,7 +79,7 @@ def write_file():
 
     return jsonify(responsePackage)
 
-@app.route("/<filename>", methods=['GET'])
+@app.route("/r/<filename>", methods=['GET'])
 def get_file_locations(filename):
     global numServers
     response = 'could not find file with that name'
@@ -92,8 +92,28 @@ def get_file_locations(filename):
             if item['filename'] == filename:
                 response = 'item found but locked by another user'
                 if not check_locked(item['id'],server.port):
-                    responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
-                    return jsonify(responsePackage)
+                    if item['version]'] == 'secondary':
+                        responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
+                        return jsonify(responsePackage)
+    responsePackage = {'response':response}
+    return jsonify(responsePackage)
+
+@app.route("/w/<filename>", methods=['GET'])
+def get_file_locations(filename):
+    global numServers
+    response = 'could not find file with that name'
+    for i in range(1, numServers+1):
+        server = Server.query.get(i)
+        r = requests.get("http://"+server.host+":"+ str(server.port)+"/s/"+str(i))
+        print(r.text)
+        resJson = r.json()
+        for item in resJson:
+            if item['filename'] == filename:
+                response = 'item found but locked by another user'
+                if not check_locked(item['id'],server.port):
+                    if item['version'] == 'primary':
+                        responsePackage ={'serverhost':server.host,'serverport':server.port,'fileid':item['id']}
+                        return jsonify(responsePackage)
     responsePackage = {'response':response}
     return jsonify(responsePackage)
 
@@ -120,23 +140,7 @@ def update_files():
                     return jsonify(re.json())
     return 200
 
-@app.route("/updatep",methods=['POST'])
-def find_and_update_primary():
-    filename = request.json['filename']
-    filecontents = request.json['filecontents']
-    for i in range(1, numServers + 1):
-        server = Server.query.get(i)
-        r = requests.get("http://" + server.host + ":" + str(server.port) + "/s/" + str(i))
-        print(r.text)
-        resJson = r.json()
-        for item in resJson:
-            if item['filename'] == filename and item['version'] == 'primary':
-                update_data = {'filename': filename, 'filecontents': filecontents, 'update_flag': 'from_secondary','lock_id':0}
-                headers = {'Content-Type': 'application/json'}
-                r = requests.put("http://" + server.host + ":" + str(server.port) + "/" + item.id, headers=headers,
-                                data=json.dumps(update_data))
-                return r.json()
-    return 200
+
 def check_locked(id, port):
     data = {'id':id,'port':port}
     headers ={'Content-Type':'application/json'}
