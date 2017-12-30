@@ -36,8 +36,9 @@
 * read_file, client can read file
 
 ## TODO
+* remove hard coded urls for lock and directory servers, have them read in from config file
 * unlock file after a certain time period
-* set so that user can specify number of versions of file default 1
+* set so that user can specify number of versions of file default 2
 * think of how to react to user deleteing file with replicated copies
 * ~~make it so fileservers are no longer sharing the same database~~ this will be solved by running on different machines
 * Auth Server
