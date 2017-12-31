@@ -43,6 +43,7 @@ class LockSchema(ma.Schema):
 lock_schema = LockSchema()
 locks_schema = LockSchema(many = True)
 
+#endpoint for locking the file
 @app.route('/',methods=['POST'])
 def lock():
     print("lock called")
@@ -54,7 +55,7 @@ def lock():
     db.session.commit()
     return jsonify(new_lock.serialize())
 
-
+#endpoint for unlocking a file
 @app.route('/<id>', methods=['DELETE'])
 def unlock(id):
     lock = Lock.query.get(id)
@@ -65,6 +66,8 @@ def unlock(id):
     else:
         res = {'response':'no lock with that id'}
         return jsonify(res)
+
+#endpoint for validating that a lock and file are correct
 @app.route('/v',methods=['POST'])
 def validate_lock_id():
     lock_id = request.json['id']
@@ -80,6 +83,7 @@ def validate_lock_id():
     response = {"valid":False}
     return jsonify(response)
 
+#endpoint for checking if a file on a server is locked
 @app.route('/vf',methods=['POST'])
 def check_file_locked():
     file = request.json['id']

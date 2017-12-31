@@ -117,19 +117,21 @@ def file_delete(id):
     db.session.commit()
     return file_schema.jsonify(file)
 
+#informs the directory server to update the secondarys
 def update_secondarys(id,serv_id):
     file = File.query.get(id)
     update_data = {'filename':file.filename,'filecontents':file.filecontents,'server_id':serv_id}
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://127.0.0.1:5000/update",headers=headers,data=json.dumps(update_data))
 
-
+#informs the directory server of the fileservers location so that files can be retreived from it
 def inform_directory(host, port):
     servinfo = {'host':options.host,'port':options.port}
     print(servinfo)
     headers ={'Content-Type':'application/json'}
     r = requests.post("http://"+host+":"+port+"/register",headers=headers, data=json.dumps(servinfo))
 
+#checks that the file being edited has been locked
 def check_lock(id,file_id):
     data = {'id': int(id), 'port': int(options.port),'file_id':int(file_id)}
     headers = {'Content-Type': 'application/json'}

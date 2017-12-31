@@ -39,6 +39,7 @@ class ServerSchema(ma.Schema):
 server_schema = ServerSchema()
 servers_schema = ServerSchema(many=True)
 
+#enpoint for fileserves to register with the directory
 @app.route("/register", methods=["POST"])
 def register_server():
     host = request.json['host']
@@ -51,6 +52,7 @@ def register_server():
     #numServers += 1
     return jsonify(new_server.serialize())
 
+#endpoint to gracefully remove a fileserver(never used)
 @app.route("/unregister/<id>", methods=["DELETE"])
 def unregister_server(id):
     server = Server.query.get(id)
@@ -60,6 +62,7 @@ def unregister_server(id):
     #numServers -= 1
     return server_schema.jsonify(server)
 
+#Writes a file to every fileserver, one being the primary version, the others are secondary
 @app.route("/",methods=['POST'])
 def write_file():
     global numServers
@@ -79,6 +82,7 @@ def write_file():
 
     return jsonify(responsePackage)
 
+#endpoint for getting a file for reading, returns a secondary version of the file
 @app.route("/r/<filename>", methods=['GET'])
 def get_file_locations(filename):
     global numServers
@@ -98,6 +102,7 @@ def get_file_locations(filename):
     responsePackage = {'response':response}
     return jsonify(responsePackage)
 
+#endpoint for getting a file for writing, returns the primary version of the file
 @app.route("/w/<filename>", methods=['GET'])
 def get_file_locations(filename):
     global numServers
@@ -117,6 +122,7 @@ def get_file_locations(filename):
     responsePackage = {'response':response}
     return jsonify(responsePackage)
 
+#endpoint for beginning updating of secondary files
 @app.route("/update",methods=['POST'])
 def update_files():
     filename = request.json['filename']
@@ -140,7 +146,7 @@ def update_files():
                     return jsonify(re.json())
     return 200
 
-
+#checks if file is locked
 def check_locked(id, port):
     data = {'id':id,'port':port}
     headers ={'Content-Type':'application/json'}
