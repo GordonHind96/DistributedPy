@@ -1,7 +1,8 @@
 # SIMPLE DISTRIBUTED FILE SYSTEM
 
 To build, first in a python interpreter create the database tables, this requires SQLite 3.
->> from <servertype> import db
+>> from servertype import db
+
 >> db.create_all()
 
 Then in the command line run the following
