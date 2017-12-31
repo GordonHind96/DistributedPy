@@ -5,7 +5,7 @@ To build, first in a python interpreter create the database tables, this require
 
 >> db.create_all()
 
-Then in the command line run the following
+Then in the command line run the following for each server you want to set up, ensure that file servers are on different ports
 >> python <servertype.py> --host <> --port <>
 
 currently lockserver and fileserver have to be run on localhost (127.0.0.1) on ports 5000 and 6000 respectively, I plan to move these out to a modifiable config file
